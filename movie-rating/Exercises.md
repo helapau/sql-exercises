@@ -222,3 +222,93 @@ return the reviewer name, movie title, and number of stars.
     T1.revName < T2.revName
     group by T1.revName, T2.revName;    
 </details>
+
+15. For each rating that is the lowest (fewest stars) currently in the database, return the reviewer name, movie title, and number of stars.
+<details>
+<summary>Answer</summary>
+
+	SELECT name as revName, 
+	M.title as [movie title], 
+	t.stars
+	FROM (
+		SELECT * from Rating where stars = (select min(stars) from Rating)
+	) t,
+	Reviewer, 
+	Movie M
+	WHERE t.rId = Reviewer.rId and M.mId = T.mID
+
+</details>
+
+16. List movie titles and average ratings, from highest-rated to lowest-rated. If two or more movies have the same average rating, list them in alphabetical order.
+<details>
+<summary>Answer</summary>
+
+	select title, avgRating
+	from Movie
+	JOIN (
+		select mId, avg(cast(stars as float)) as avgRating
+		from Rating
+		group by mId
+	) T
+	ON T.mID = Movie.mId
+	order by avgRating DESC, title;
+
+</details>
+
+17. Find the names of all reviewers who have contributed three or more ratings. (As an extra challenge, try writing the query without HAVING or without COUNT.)
+<details>
+<summary>Answer</summary>
+
+	SELECT Reviewer.name
+	FROM Rating
+	JOIN Reviewer ON Reviewer.rId = Rating.rId
+	group by Reviewer.name
+	HAVING count(Rating.rId) > 2;
+
+</details>
+
+18. Find the movie(s) with the lowest average rating. Return the movie title(s) and average rating. (Hint: This query may be more difficult to write in SQLite than other systems; you might think of it as finding the lowest average rating and then choosing the movie(s) with that average rating.)
+<details>
+<summary>Answer</summary>
+
+	with cte (title, avgRating)
+	as (select title, avg(cast(stars as float)) as avgRating
+		from Movie
+		JOIN Rating ON Rating.mID = Movie.mId
+		group by title)
+
+	select title, avgRating from cte t2
+	where t2.avgRating in (
+		select min(t1.avgRating)
+		from cte t1
+	)
+</details>
+
+19. For each director, return the director's name together with the title(s) of the movie(s) they directed that received the highest rating among all of their movies, and the value of that rating. Ignore movies whose director is NULL.
+<details>
+<summary>Answer</summary>
+
+	with cte_movies_with_rating (title, director, mId, stars) as 
+	(
+		select title, director, Movie.mId, stars 
+		from Movie 
+		JOIN Rating on Movie.mId = Rating.mID
+		--where Movie.mId in (select mID from Rating)
+		and director is not null
+	)
+
+	select maxRating, T.director, title from (
+		select max(Rating.stars) as maxRating, director
+		from Rating 
+		JOIN cte_movies_with_rating 
+		on cte_movies_with_rating.mId = Rating.mID
+		group by director
+	) T 
+	JOIN cte_movies_with_rating 
+	ON T.director = cte_movies_with_rating.director
+	WHERE cte_movies_with_rating.stars = maxRating;
+</details>
+
+
+
+
