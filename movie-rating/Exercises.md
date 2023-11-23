@@ -309,6 +309,60 @@ return the reviewer name, movie title, and number of stars.
 	WHERE cte_movies_with_rating.stars = maxRating;
 </details>
 
+** Modification **
+1. Add the reviewer Roger Ebert to your database, with an rID of 209. 
+<details>
+<summary>Answer</summary>
+
+	INSERT INTO Reviewer (rID, name) VALUES (209, 'Roger Ebert');
+</details>
+
+2. Insert 5-star ratings by James Cameron for all movies in the database. Leave the review date as NULL. 
+<details>
+<summary>Answer</summary>
+
+	INSERT INTO Rating (rID, mID, stars)
+	(
+		SELECT rID, mID, 5 from 
+		(SELECT rID from Reviewer WHERE name = 'James Cameron') as rID,
+		(SELECT mID from Movie) as mID
+	)
+</details>
+
+3. For all movies that have an average rating of 4 stars or higher, add 25 to the release year. 
+(Update the existing tuples; don't insert new tuples.) 
+<details>
+<summary>Answer</summary>
+
+	UPDATE Movie
+	SET year = T2.yearOld + 25
+	FROM (
+		SELECT year as yearOld, Movie.mID FROM Movie
+		JOIN (
+			SELECT AVG(CAST(stars as float)) as avgRating, mID
+			FROM Rating
+			GROUP BY mID
+		) T ON T.mID = Movie.mId
+		WHERE avgRating >= 4
+	) as T2
+</details>
+
+4. Remove all ratings where the movie's year is before 1970 or after 2000, and the rating is fewer than 4 stars. 
+<details>
+<summary>Answer</summary>
+
+	DELETE FROM Rating
+	WHERE mID IN (
+			SELECT Movie.mId from Movie
+			JOIN Rating ON Movie.mId = Rating.mID
+			WHERE 
+			year < 1970 or year > 2000
+			and stars < 4
+	)
+</details>
+
+
+
 
 
 
